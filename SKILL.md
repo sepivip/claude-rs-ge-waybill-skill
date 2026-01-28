@@ -32,6 +32,82 @@ This skill provides integration with the Georgian Revenue Service (RS.GE) Electr
 | 5 | Goods return (საქონლის უკან დაბრუნება) |
 | 6 | Sub-waybill (ქვე-ზედნადები) |
 
+## CRITICAL: Type-Specific Field Requirements
+
+### Type 1 - Internal Transfer (შიდა გადაზიდვა)
+- `BUYER_TIN` must be **empty**
+- Driver info required for transport types
+
+### Type 2 - Delivery (მიწოდება)
+- `START_ADDRESS`: Required
+- `END_ADDRESS`: Required
+- `DRIVER_TIN`: Required (11 digits, or set `CHEK_DRIVER_TIN=0` for foreigner)
+- `DRIVER_NAME`: Required
+- `CAR_NUMBER`: Required (format: `AA123BB`, no dashes!)
+- `TRANS_ID`: 1 (automobile) or other valid transport type
+
+### Type 3 - Without Transport (ტრანსპორტირების გარეშე) ⚠️
+**CRITICAL**: These fields MUST be EMPTY - otherwise RS.ge returns misleading errors!
+- `START_ADDRESS`: `""` (empty!)
+- `END_ADDRESS`: `""` (empty!)
+- `DRIVER_TIN`: `""`
+- `DRIVER_NAME`: `""`
+- `CAR_NUMBER`: `""`
+- `TRANS_ID`: `0`
+
+**WARNING**: If addresses are provided for Type 3, RS.ge returns error `-1036 "Invalid unit"` which is **completely misleading**! The actual problem is the non-empty addresses.
+
+### Type 6 - Sub-waybill (ქვე-ზედნადები)
+- `PAR_ID`: Required - must specify parent waybill ID
+
+## Valid Unit IDs
+| ID | Name | Note |
+|----|------|------|
+| 1 | ცალი (Piece) | |
+| 2 | კგ (Kilogram) | |
+| 3 | გრამი (Gram) | |
+| 4 | ლიტრი (Liter) | |
+| 5 | ტონა (Ton) | |
+| 7 | სანტიმეტრი | |
+| 8 | მეტრი (Meter) | |
+| 9 | კილომეტრი | |
+| 10 | კვ.სმ | |
+| 11 | კვ.მ (Sq Meter) | |
+| 12 | მ³ (Cubic Meter) | |
+| 13 | მილილიტრი | |
+| 14 | შეკვრა (Package) | |
+| 99 | სხვა (Other) | Requires `UNIT_TXT` |
+
+**Note**: Unit ID 6 does NOT exist!
+
+## Valid Transport Type IDs
+| ID | Name |
+|----|------|
+| 1 | საავტომობილო (Automobile) |
+| 2 | სარკინიგზო (Railway) |
+| 3 | საავიაციო (Aviation) |
+| 4 | სხვა (Other) - requires `TRANS_TXT` |
+| 6 | საავტომობილო - უცხო ქვეყნის (Foreign) |
+| 7 | გადამზიდავი (Carrier) |
+| 8 | მოპედი/მოტოციკლი |
+
+## Car Number Format
+Georgian plates must be in format `AA123BB` (no dashes). Examples:
+- Correct: `AA123BB`, `TT999ZZ`
+- Wrong: `AA-123-BB`, `aa123bb`
+
+## Common Error Codes and Solutions
+| Code | Meaning | Solution |
+|------|---------|----------|
+| -1005 | Buyer TIN not found | Check TIN or set `CHEK_BUYER_TIN=0` |
+| -1012 | Driver info required | Add `driver_tin`, `driver_name` |
+| -1014 | Invalid driver TIN | Check TIN or set `CHEK_DRIVER_TIN=0` |
+| -1026 | Invalid car number | Use format `AA123BB` (no dashes) |
+| -1035 | Buyer TIN must be empty | For Type 1, clear `buyer_tin` |
+| -1036 | Invalid unit | **Often misleading!** For Type 3, check that addresses are EMPTY |
+| -1037 | TRANS_TXT required | Set `trans_txt` when `trans_id=4` |
+| -2006 | Invalid goods status | Set goods `STATUS=1` (not 0) |
+
 ## Waybill Statuses
 
 | Code | Status |
